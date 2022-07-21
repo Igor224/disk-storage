@@ -1,12 +1,12 @@
 import db from '../models/index.js';
-import {getLog} from '../../logger/index.js';
+import {getLog} from '../../../packages/logger/index.js';
 
-const log = getLog('services:storage-service'); // убрать!
+const log = getLog('services:storage-service'); // убрать! с помощью воркспэйса
 
 const File = db.file;
 const User = db.user;
 
-async function create(data, transaction = null) {
+async function findOrCreate(data, transaction = null) {
   try {
     return await User.findOrCreate({
       where: {id: data.id},
@@ -25,7 +25,7 @@ async function create(data, transaction = null) {
         },
         'User created');
 
-        return user;
+        return data;
       });
   } catch (err) {
     log.error({
@@ -53,20 +53,22 @@ async function addFileToUser(file, user, t = null) {
           user: data?.id,
           file: file?.id
         }, `User id:${data?.id} has file id: ${file?.id} already`);
+
+        return data;
       } else {
         log.trace({
           user: user?.id,
           file: file?.id
         }, `Association between user id:${user?.id} add file id:${file?.id} not found`);
-      }
 
-      return data;
+        return false;
+      }
     });
 
     if (!hasAssociation) {
-      return await user.addFile(file, {transaction: t});
+      return [await user.addFile(file, {transaction: t}), true];
     } else {
-      return console.log('CAN NOT CREATE FILE');
+      return [hasAssociation, false];
     }
   } catch (err) {
     log.error({
@@ -122,7 +124,7 @@ async function findAllFiles(userId, limit, offset) {
       include: [{
         model: File,
         attributes: {
-          include: [[db.sequelize.literal(`(SELECT COUNT(file_id) from user_files WHERE user_id=${userId})`), 'countFiles']] // придумать как обойтись без этого
+          include: [[db.sequelize.literal(`(SELECT COUNT(file_id) from user_files WHERE user_id=${userId})`), 'countFiles']]
         },
         required: false
       }],
@@ -156,12 +158,12 @@ async function findAllFiles(userId, limit, offset) {
     log.error({
       err: err,
       modelName: User.getTableName()
-    }, `Failed to finde the files associated with user ${userId}`);
+    }, `Failed to find the files associated with user ${userId}`);
   };
 }
 
 export default {
-  create,
+  findOrCreate,
   addFileToUser,
   deleteFile,
   findAllFiles

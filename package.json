@@ -20,8 +20,9 @@
     "user-service",
     "storage-service",
     "user-service",
-    "logger",
-    "test"
+    "packages/*",
+    "mi",
+    "app\\user-service"
   ],
   "dependencies": {
     "config": "^3.3.7",

@@ -1,12 +1,12 @@
 import db from '../models/index.js';
-import {getLog} from '../../logger/index.js';
+import {getLog} from '../../../packages/logger/index.js';
 
 const log = getLog('services:storage-service'); // убрать
 
 const File = db.file;
 const User = db.user;
 
-async function create(data, transaction = null) {
+async function findOrCreate(data, transaction = null) {
   try {
     return await File.findOrCreate({
       where: {md5: data.md5},
@@ -18,6 +18,7 @@ async function create(data, transaction = null) {
         size: data.size
       }, transaction})
       .then((data) => {
+        console.dir(data);
         const file = data?.[0];
 
         log.trace({
@@ -30,7 +31,7 @@ async function create(data, transaction = null) {
         },
         'File created');
 
-        return file;
+        return data;
       });
   } catch (err) {
     log.error({
@@ -72,6 +73,40 @@ async function findById(fileId, userId) {
   }
 };
 
+async function findOne(md5) {
+  try {
+    return await File.findOne({
+      where: {md5: md5}
+    })
+      .then((data) => {
+        console.dir(data);
+        if (data) {
+          log.trace({
+            id: data.id,
+            name: data.name,
+            extention: data.extention,
+            md5: data.md5,
+            type: data.type,
+            size: data.size
+          },
+          'File was found');
+        } else {
+          log.trace({
+            md5: md5
+          },
+          'File with such hash not found');
+        }
+
+        return data;
+      });
+  } catch (err) {
+    log.error({
+      err: err,
+      modelName: File.getTableName()
+    }, 'File is not exist');
+  };
+};
+
 async function findAllUsers(fileId) {
   try {
     return await File.findByPk(fileId, {
@@ -107,7 +142,8 @@ async function findAllUsers(fileId) {
 }
 
 export default {
-  create,
+  findOrCreate,
+  findOne,
   findById,
   findAllUsers
 };

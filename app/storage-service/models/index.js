@@ -6,8 +6,8 @@ const db = {};
 
 db.sequelize = sequelize;
 db.file = file(sequelize, DataTypes);
-
 db.user = user(sequelize, DataTypes);
+
 db.file.belongsToMany(db.user, {
   through: 'user_files',
   foreignKey: 'file_id'
