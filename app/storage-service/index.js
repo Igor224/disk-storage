@@ -1,23 +1,28 @@
-import {} from 'dotenv/config';
 import express from 'express';
 import Sequelize, {ConnectionError} from './dbConfig/db.js';
 import cors from 'cors';
-import bodyParser from 'body-parser';
+import os from 'os';
 import uploadFile from 'express-fileupload';
-import router from './routers/index';
-import errorMiddleware from '../../packages/middlewares/error-middleware';
+import router from './routers/index.js';
+import errorMiddleware from '../../packages/middlewares/error-middleware.js';
+import config from '../../config/default.js';
 import {getLog} from '../../packages/logger/index.js';
 
+const {storageServices} = config;
 const log = getLog('service:storage');
 
-const PORT = process.env.PORT_API || 5000;
+const PORT = storageServices.SERVICE_PORT;
 const app = express();
 
 app.use(express.json());
-app.use(bodyParser.urlencoded({extended: false}));
-app.use(uploadFile({})); // добавить валидацию файлов
+app.use(express.urlencoded({extended: true}));
+// app.use(express.static('static')); // до делать для фронта
+app.use(uploadFile({
+  debug: true,
+  useTempFiles: true,
+  tempFileDir: os.tmpdir()}));
 app.use(cors());
-app.use('/api/files', router);
+app.use('/api/file', router);
 app.use(errorMiddleware);
 
 const start = async () => {

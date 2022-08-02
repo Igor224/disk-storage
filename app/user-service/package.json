@@ -3,18 +3,25 @@
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "logger": "^1.0.0"
+    "logger": "^1.0.0",
+    "nodemon": "^2.0.19"
   },
-  "description": "",
   "dependencies": {
+    "bcrypt": "^5.0.1",
+    "ckey": "^1.0.3",
     "express-validator": "^6.14.2",
+    "jsonwebtoken": "^8.5.1",
+    "packages": "file:packages",
     "validator": "^13.7.0"
-  }
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js",
+    "prod": "node index.js"
+  },
+  "description": ""
 }

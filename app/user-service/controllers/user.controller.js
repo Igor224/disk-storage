@@ -1,41 +1,42 @@
-const userService = require('../service/user-service.js');
-const {validationResult} = require('express-validator');
-const ApiError = require('../exceptions/api-error.js');
+import userService from '../service/user-service.js';
+import {validationResult} from 'express-validator';
+import ApiError from '../../../packages/exceptions/api-errors.js';
+// import config from '../../../config/default.js';
 
-export async function registration(req, res, next) {
+async function signup(req, res, next) {
   try {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
       return next(ApiError.BadRequest('Validation Error', errors.array()));
     }
-    const {email, password} = req.body;
-    const userData = await userService.registration(email, password);
+    const {login, password} = req.body;
+    const userData = await userService.signup(login, password);
 
-    res.cookie('refreshToken', userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
+    res.cookie('refreshToken', userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true}); // одинаковое время и для рефреш и для куки
 
-    return res.json(userData);
+    return res.status(201).json(userData); // редирект сделать
   } catch (e) {
     next(e);
   }
 }
 
-export async function signin(req, res, next) {
+async function signin(req, res, next) {
   try {
-    const {email, password} = req.body;
-    const userData = await userService.signin(email, password);
+    const {login, password} = req.body;
+    const userData = await userService.signin(login, password);
 
     res.cookie('refreshToken', userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
 
     res.json(userData);
 
-    return res.redirect(process.env.API_URL);
+    // return res.redirect(config.API_URL); // редирект на storage-service
   } catch (e) {
     next(e);
   }
 }
 
-export async function logout(req, res, next) {
+async function logout(req, res, next) {
   try {
     const {refreshToken} = req.cookies;
     const token = await userService.logout(refreshToken);
@@ -48,17 +49,11 @@ export async function logout(req, res, next) {
   }
 }
 
-export async function signout(req, res, next) {
-  try {
 
-  } catch (e) {
-    next(e);
-  }
-}
-
-export async function refresh(req, res, next) {
+async function refresh(req, res, next) {
   try {
     const {refreshToken} = req.cookies;
+
     const userData = await userService.refresh(refreshToken);
 
     res.cookie('refreshToken', userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true});
@@ -69,14 +64,18 @@ export async function refresh(req, res, next) {
   }
 }
 
-export async function getUsers(req, res, next) {
+async function getUserInfo(req, res, next) {
   try {
-    const user = await userService.getUserInfo(/* id*/); //
-
-    return res.json(user);
+    res.status(200).json({id: req.user.login});
   } catch (e) {
     next(e);
   }
 }
 
-
+export default {
+  signup,
+  signin,
+  logout,
+  refresh,
+  getUserInfo
+};

@@ -10,16 +10,15 @@ import {getLog} from '../packages/logger/index.js';
 
 const log = getLog('service:storage');
 
-// sequelize.queue = new PQueue({concurrency: (sequelize.connectionManager.pool.maxSize - 1)});
-// const inTransaction = (fn) => sequelize.queue.add(
-//   () => sequelize.transaction((transaction) => fn(transaction))
-// );
+sequelize.queue = new PQueue({concurrency: (sequelize.connectionManager.pool.maxSize - 1)});
+const inTransaction = (fn) => sequelize.queue.add(
+  () => sequelize.transaction((transaction) => fn(transaction))
+);
 
 const start = async () => {
   try {
     await sequelize.authenticate();
     log.info(`Successfully connected to database '${sequelize.getDatabaseName()}`);
-    await sequelize.sync();
   } catch (err) {
     if (err instanceof ConnectionError) {
       log.error({
@@ -35,6 +34,12 @@ const start = async () => {
 };
 
 start();
+
+// const [dbUser, createdU] = await User.findOrCreate({id: 1});
+// const [dbFile, createdF] = await File.findOrCreate({md5: 'a24b0ccbd3c4e21ec1425d214fbcc941'});
+// // const add = await User.addFileToUser(dbFile, dbUser);
+// const tr = await dbUser.hasFile(dbFile);
+
 
 // export async function FileCreate() {
 // // ++++++++++++++++++++++++++++++++create file+++++++++++++++++++++++++
@@ -80,30 +85,56 @@ start();
 // async function createUF() {
 //   try {
 //     inTransaction(async (t) => {
-//       const _file = await File.create({
+//       const tr = {transaction: t};
+//       const _file = await File.findOrCreate({
 //         name: gFiles.name(),
 //         extention: gFiles.ext(),
-//         md5: '5f9AeAf5ea2fFa5ffB87Dc0a8BfFFCce', //gFiles.md5(),
+//         md5: gFiles.md5(),
 //         type: gFiles.type(),
 //         size: gFiles.size()
-//       }, {transaction: t});
+//       }, tr);
 
-//       const _user = await User.create({
+//       const _user = await User.findOrCreate({
 //         id: 12 // gUsers.id()
-//       }, {transaction: t});
+//       }, tr);
 
-//       return await User.addFile(_user.id, _file.id, {transaction: t});
+//       console.dir(_user);
+//       console.dir(_file);
+//       return await _user.addFile(_file, {transaction: t});
 //     });
 //   } catch (err) {
 //     console.log('SOME ER: ', err);
 //   };
 // }
+// createUF();
 
-// (async ()=>{
-//   for (let i = 0; i < 20; i++) {
-//     await createUF();
-//   }
-// })();
+async function CR() {
+  try {
+    const [_file] = await File.findOrCreate({
+      name: gFiles.name(),
+      extention: gFiles.ext(),
+      md5: gFiles.md5(),
+      type: gFiles.type(),
+      size: gFiles.size()
+    });
+
+    const [_user] = await User.findOrCreate({
+      id: 12 // gUsers.id()
+    });
+
+    return await _file.addUser(_user);
+  } catch (err) {
+    console.log('SOME ER: ', err);
+  };
+}
+
+// CR();
+(async ()=>{
+  for (let i = 0; i < 50; i++) {
+    CR();
+    // await createUF();
+  }
+})();
 
 // .then((file) => console.dir(file));
 

@@ -1,23 +1,21 @@
-require('dotenv').config();
-const express = require('express');
-const sequelize = require('./db/db');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const router = require('./router/index');
-const errorMiddleware = require('./middlewares/error-middleware');
-const {getLog} = require('../../packages/logger');
+import express from 'express';
+import sequelize from './dbConfig/db.js';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import router from './router/index.js';
+import errorMiddleware from '../../packages/middlewares/error-middleware.js';
+import config from '../../config/default.js';
+import {getLog} from '../../packages/logger/index.js';
 
+const {userService} = config;
 const log = getLog('services:user');
 
-const PORT = process.env.PORT_USER || 5000;
+const PORT = userService.SERVICE_PORT;
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  credentials: true,
-  origin: process.env.API_NOTE_URL
-}));
+app.use(cors());
 app.use('/api', router);
 app.use(errorMiddleware);
 
@@ -25,9 +23,9 @@ app.use(errorMiddleware);
 const start = async () => {
   await sequelize.authenticate()
     .then(() => log.info(`Successfully connected to database '${sequelize.getDatabaseName()}`))
-    .catch((e) =>
+    .catch((err) =>
       log.error({
-        e,
+        err,
         db: sequelize.getDatabaseName()
       }, 'ERROR - Unable to connect to the database')
     );

@@ -9,5 +9,9 @@ db.token = token(sequelize, DataTypes);
 db.user = user(sequelize, DataTypes);
 
 db.token.belongsTo(db.user);
-db.user.hasOne(db.file);
+db.user.hasOne(db.token, {
+  onDelete: 'cascade',
+  onUpdate: 'cascade'
+});
+
 export default db;

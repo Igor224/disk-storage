@@ -1,7 +1,7 @@
 import db from '../models/index.js';
 import {getLog} from '../../../packages/logger/index.js';
 
-const log = getLog('services:storage-service'); // убрать
+const log = getLog('services:storage-service');
 
 const File = db.file;
 const User = db.user;
@@ -43,58 +43,19 @@ async function findOrCreate(data, transaction = null) {
 
 async function findById(fileId, userId) {
   try {
-    return await File.findByPk(fileId, {
-      include: {
-        model: User,
-        where: {
-          id: userId
-        }
-      }}).then((data)=> {
-      if (data) {
-        console.log('DATA: ', data);
-        log.trace({
-          fileId: data.id
-        }, `File id:${data.id} belongs to user with id:${userId}`);
-      } else {
-        log.trace({
-          fileId: fileId
-        }, `File id:${fileId} was deleted or not exist`);
-
-        return null;
-      }
-
-      return data;
-    });
-  } catch (err) {
-    log.error({
-      err: err,
-      modelName: File.getTableName()
-    }, 'Failed to finde file');
-  }
-};
-
-async function findOne(md5) {
-  try {
-    return await File.findOne({
-      where: {md5: md5}
-    })
-      .then((data) => {
-        console.dir(data);
+    return await File.findByPk(fileId)
+      .then((data)=> {
         if (data) {
+          console.log('DATA: ', data);
           log.trace({
-            id: data.id,
-            name: data.name,
-            extention: data.extention,
-            md5: data.md5,
-            type: data.type,
-            size: data.size
-          },
-          'File was found');
+            fileId: data.id
+          }, `File id:${data.id} exist`);
         } else {
           log.trace({
-            md5: md5
-          },
-          'File with such hash not found');
+            fileId: fileId
+          }, `File id:${fileId} was deleted or not exist`);
+
+          return null;
         }
 
         return data;
@@ -103,32 +64,34 @@ async function findOne(md5) {
     log.error({
       err: err,
       modelName: File.getTableName()
-    }, 'File is not exist');
-  };
+    }, 'Failed to finde file');
+  }
 };
 
 async function findAllUsers(fileId) {
   try {
-    return await File.findByPk(fileId, {
+    return await File.findAll({
+      where: {id: fileId},
+      attributes: ['users.id', [db.sequelize.fn('COUNT',
+        db.sequelize.col('users.id')), 'items']],
       include: User
     }).then((data) => {
-      console.dir(data);
-      const {Users = null} = data;
+      const [{dataValues: {items}}] = data;
 
-      if (Users.length > 0) {
+      if (items > 0) {
         log.trace({
-          fileId: data?.id,
-          users: Users.length
+          fileId: fileId,
+          users: items
         },
-        `File id:${data?.id} belongs to ${Users.length} users`);
+        `File id:${fileId} belongs to ${items} users`);
 
-        return Users;
+        return items;
       } else {
         log.trace({
-          fileId: data?.id,
+          fileId: fileId,
           users: null
         },
-        `File id:${data?.id} belongs to nobody`);
+        `File id:${fileId} belongs to nobody`);
 
         return null;
       }
@@ -141,9 +104,29 @@ async function findAllUsers(fileId) {
   };
 }
 
+async function deleteFileDB(fileId) {
+  try {
+    return await File.destroy({
+      where: {id: fileId}
+    })
+      .then((data) => {
+        log.trace({
+          fileId: fileId
+        },
+        `File id:${fileId} was destroed`);
+
+        return data;
+      });
+  } catch (err) {
+    log.error({
+      err: err,
+      modelName: File.getTableName()
+    }, 'Failed to find users');
+  };
+}
 export default {
   findOrCreate,
-  findOne,
   findById,
-  findAllUsers
+  findAllUsers,
+  deleteFileDB
 };

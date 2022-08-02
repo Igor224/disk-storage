@@ -1,7 +1,7 @@
 import db from '../models/index.js';
 import {getLog} from '../../../packages/logger/index.js';
 
-const log = getLog('services:storage-service'); // убрать! с помощью воркспэйса
+const log = getLog('services:storage-service');
 
 const File = db.file;
 const User = db.user;
@@ -35,88 +35,6 @@ async function findOrCreate(data, transaction = null) {
   };
 };
 
-async function addFileToUser(file, user, t = null) {
-  try {
-    const hasAssociation = await User.findByPk(user.id, {
-      attributes: ['id'],
-      include: {
-        model: File,
-        attributes: ['id'],
-        where: {
-          id: file.id
-        }
-      }
-    }).then((data)=> {
-      if (data) {
-        console.dir(data?.getFiles());
-        log.trace({
-          user: data?.id,
-          file: file?.id
-        }, `User id:${data?.id} has file id: ${file?.id} already`);
-
-        return data;
-      } else {
-        log.trace({
-          user: user?.id,
-          file: file?.id
-        }, `Association between user id:${user?.id} add file id:${file?.id} not found`);
-
-        return false;
-      }
-    });
-
-    if (!hasAssociation) {
-      return [await user.addFile(file, {transaction: t}), true];
-    } else {
-      return [hasAssociation, false];
-    }
-  } catch (err) {
-    log.error({
-      err: err,
-      modelName: User.getTableName()
-    }, 'Failed to add file');
-  }
-};
-
-async function deleteFile(fileId, userId) {
-  try {
-    const _user = await User.findByPk(userId); // не обязательный
-
-    if (!_user) {
-      throw new Error('User not found!'); // выкинуть кастомные ошибки
-    }
-    const _file = await File.findByPk(fileId); // не обязательный
-
-    if (!_file) {
-      throw new Error('File not found!');
-    }
-
-    return await _user.removeFile(fileId).then((data) => {
-      console.dir(data);
-      if (data) {
-        log.trace({
-          user: _user?.id,
-          file: _file?.id
-        }, `User ${_user?.id} deleted the file ${_file?.id}`);
-
-        return true;
-      } else {
-        log.trace({
-          user: _user?.id,
-          file: _file?.id
-        }, `User ${_user?.id} does not have this file`);
-
-        return false;
-      }
-    });
-  } catch (err) {
-    log.error({
-      err: err,
-      modelName: User.getTableName()
-    }, 'Failed to delete file');
-  }
-};
-
 async function findAllFiles(userId, limit, offset) {
   try {
     return await User.findAll({
@@ -128,8 +46,8 @@ async function findAllFiles(userId, limit, offset) {
         },
         required: false
       }],
-      limit: Number(limit) || null,
-      offset: Number(offset) || null,
+      limit: Number(limit) || 10,
+      offset: Number(offset) || 0,
       subQuery: false,
       distinct: true
     }).then((data)=>{
@@ -164,7 +82,5 @@ async function findAllFiles(userId, limit, offset) {
 
 export default {
   findOrCreate,
-  addFileToUser,
-  deleteFile,
   findAllFiles
 };

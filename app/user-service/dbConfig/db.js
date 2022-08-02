@@ -1,13 +1,14 @@
 import DataTypes, {Sequelize, ConnectionError} from 'sequelize';
 import config from '../../../config/default.js';
 
-const {userService} = config;
+const {userService: {MySQL}} = config;
 
+console.dir(MySQL.options);
 export default new Sequelize(
-  userService.DB,
-  userService.USER,
-  userService.PASS,
-  userService.options
+  MySQL.DB,
+  MySQL.USER,
+  MySQL.PASS,
+  MySQL.options
 );
 
 export {

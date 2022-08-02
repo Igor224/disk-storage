@@ -4,7 +4,7 @@ export default function(sequelize, DataTypes) {
     name: {type: DataTypes.STRING, allowNull: false},
     extention: {type: DataTypes.STRING, allowNull: false},
     md5: {type: DataTypes.STRING, unique: true, allowNull: false},
-    type: {type: DataTypes.STRING, defaultValue: 'unknown'}, // добавить hmac
+    type: {type: DataTypes.STRING, defaultValue: 'unknown'},
     size: {type: DataTypes.STRING, defaultValue: 0}
   });
 
